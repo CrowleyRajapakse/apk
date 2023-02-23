@@ -17,7 +17,7 @@ on:
     paths:
       - '**/gateway/router**'
     branches:
-      - 'main'
+      - 'envoy-test'
 concurrency:
   group: router-${{ github.event.number }}
   cancel-in-progress: true

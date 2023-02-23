@@ -17,7 +17,7 @@ on:
     paths:
       - '**/gateway/enforcer/**'
     branches:
-      - 'main'
+      - 'envoy-test'
 concurrency:
   group: enforcer-${{ github.event.number }}
   cancel-in-progress: true
