@@ -27,7 +27,7 @@ release {
     tagTemplate = 'enforcer-$version'
 
     git {
-        requireBranch= "main"
+        requireBranch= "envoy-test2"
         pushToRemote= "origin"
     }
 }
