@@ -17,7 +17,7 @@ on:
     paths:
       - '**/adapter/**'
     branches:
-      - 'main'
+      - 'envoy-test3'
 concurrency:
   group: adapter-${{ github.event.number }}
   cancel-in-progress: true
