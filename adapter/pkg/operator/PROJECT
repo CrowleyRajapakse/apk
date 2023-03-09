@@ -61,6 +61,7 @@ resources:
   group: cp
   kind: Subscription
   path: github.com/wso2/apk/adapter/pkg/operator/apis/cp/v1alpha1
+  version: ""
 - api:
     crdVersion: v1
     namespaced: true
@@ -69,5 +70,15 @@ resources:
   group: dp
   kind: Scope
   path: github.com/wso2/apk/adapter/pkg/operator/apis/dp/v1alpha1
+  version: v1alpha1
+- controller: true
+  domain: wso2.com
+  group: gateway.networking.k8s.io
+  kind: Gateway
+  version: v1beta1
+- controller: true
+  domain: wso2.com
+  group: dp
+  kind: Gateway
   version: v1alpha1
 version: "3"
