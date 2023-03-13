@@ -491,16 +491,16 @@ func GenerateEnvoyResoucesForGateway(gateway *gwapiv1b1.Gateway) ([]types.Resour
 		vhostToRouteArrayMap[systemHost] = append(vhostToRouteArrayMap[systemHost], readynessEndpoint)
 	}
 
-	listenerArray, listenerFound := envoyListenerConfigMap[gateway.Name]
-	routesConfig, routesConfigFound := envoyRouteConfigMap[gateway.Name]
-	if !listenerFound && !routesConfigFound {
-		listenerArray, routesConfig = oasParser.GetProductionListenerAndRouteConfigs(vhostToRouteArrayMap, gateway)
-		envoyListenerConfigMap[gateway.Name] = listenerArray
-		envoyRouteConfigMap[gateway.Name] = routesConfig
-	} else {
-		// If the routesConfig exists, the listener exists too
-		oasParser.UpdateRoutesConfig(routesConfig, vhostToRouteArrayMap)
-	}
+	// listenerArray := envoyListenerConfigMap["Default"]
+	// routesConfig := envoyRouteConfigMap["Default"]
+	// if !listenerFound && !routesConfigFound {
+	listenerArray, routesConfig := oasParser.GetProductionListenerAndRouteConfigs(vhostToRouteArrayMap, gateway)
+	envoyListenerConfigMap[gateway.Name] = listenerArray
+	envoyRouteConfigMap[gateway.Name] = routesConfig
+	// } else {
+	// 	// If the routesConfig exists, the listener exists too
+	// 	oasParser.UpdateRoutesConfig(routesConfig, vhostToRouteArrayMap)
+	// }
 	clusterArray = append(clusterArray, envoyClusterConfigMap[gateway.Name]...)
 	endpointArray = append(endpointArray, envoyEndpointConfigMap[gateway.Name]...)
 	endpoints, clusters, listeners, routeConfigs := oasParser.GetCacheResources(endpointArray, clusterArray, listenerArray, routesConfig)
