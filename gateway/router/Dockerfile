@@ -16,7 +16,7 @@
 FROM envoyproxy/envoy:v1.25.1
 LABEL maintainer="WSO2 Docker Maintainers <wso2.com>"
 
-RUN apt-get update && apt-get upgrade -y
+RUN apt-get update && apt-get upgrade -y && apt-get install -y curl
 
 ENV LANG=C.UTF-8
 
