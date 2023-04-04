@@ -25,7 +25,7 @@ release {
     tagTemplate = 'router-$version'
 
     git {
-        requireBranch= "main"
+        requireBranch= "test1"
         pushToRemote= "origin"
     }
 }
