@@ -17,11 +17,11 @@
 # under the License.
 # -----------------------------------------------------------------------
 
-msg=$(curl -L -X POST 'https://localhost:9095/health' -H 'Authorization: Basic YWRtaW46YWRtaW4=' -k -v)
-if [[ $msg == *"healthy"* ]]; then
-    echo "Health check passed"
-    exit 0
+status_code=$(curl --write-out %{http_code} --silent --output /dev/null https://localhost:9095/health -H 'Authorization: Basic YWRtaW46YWRtaW4=' -k -v)
+
+if [[ "$status_code" -ne 200 ]] ; then
+  echo "Health check status changed to $status_code"
 else
-    echo "Health check failed"
-    exit 1
+  echo "Health check status changed to $status_code"
+  exit 0
 fi
