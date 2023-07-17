@@ -56,7 +56,7 @@ modules = [
 [[package]]
 org = "ballerina"
 name = "file"
-version = "1.8.1"
+version = "1.8.0"
 dependencies = [
 	{org = "ballerina", name = "io"},
 	{org = "ballerina", name = "jballerina.java"},
@@ -302,7 +302,7 @@ modules = [
 [[package]]
 org = "ballerina"
 name = "sql"
-version = "1.10.0"
+version = "1.8.0"
 dependencies = [
 	{org = "ballerina", name = "io"},
 	{org = "ballerina", name = "jballerina.java"},
@@ -368,7 +368,7 @@ modules = [
 [[package]]
 org = "ballerinax"
 name = "postgresql"
-version = "1.10.0"
+version = "1.8.0"
 dependencies = [
 	{org = "ballerina", name = "crypto"},
 	{org = "ballerina", name = "io"},
@@ -402,7 +402,7 @@ modules = [
 [[package]]
 org = "wso2"
 name = "config_deployer_service"
-version = "0.0.1-test1"
+version = "0.0.1-SNAPSHOT"
 dependencies = [
 	{org = "ballerina", name = "constraint"},
 	{org = "ballerina", name = "crypto"},
