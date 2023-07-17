@@ -27,7 +27,7 @@ release {
     tagTemplate = 'config-deployer-service-$version'
 
     git {
-        requireBranch= "main"
+        requireBranch= "baltest"
         pushToRemote= "origin"
     }
 }
