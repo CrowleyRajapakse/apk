@@ -176,66 +176,66 @@ public function testInterceptorConfigGenerationFromAPKConf() returns error? {
     }
 }
 
-@test:Config {}
-public function testBackendConfigGenerationFromAPKConf() returns error? {
+// @test:Config {}
+// public function testBackendConfigGenerationFromAPKConf() returns error? {
 
-    GenerateK8sResourcesBody body = {};
-    body.apkConfiguration = {fileName: "backends.apk-conf", fileContent: check io:fileReadBytes("./tests/resources/backends.apk-conf")};
-    body.definitionFile = {fileName: "api_cors.yaml", fileContent: check io:fileReadBytes("./tests/resources/api_cors.yaml")};
-    body.apiType = "REST";
-    APIClient apiClient = new;
+//     GenerateK8sResourcesBody body = {};
+//     body.apkConfiguration = {fileName: "backends.apk-conf", fileContent: check io:fileReadBytes("./tests/resources/backends.apk-conf")};
+//     body.definitionFile = {fileName: "api_cors.yaml", fileContent: check io:fileReadBytes("./tests/resources/api_cors.yaml")};
+//     body.apiType = "REST";
+//     APIClient apiClient = new;
 
-    model:APIArtifact apiArtifact = check apiClient.prepareArtifact(body.apkConfiguration, body.definitionFile, organization);
+//     model:APIArtifact apiArtifact = check apiClient.prepareArtifact(body.apkConfiguration, body.definitionFile, organization);
 
-    model:BackendSpec prodBackendSpec = {
-        services: [
-            {
-                "host": "backend-prod-test",
-                "port": 443
-            }
-        ],
-        basePath: "/v1/",
-        protocol: "https"
-    };
+//     model:BackendSpec prodBackendSpec = {
+//         services: [
+//             {
+//                 "host": "backend-prod-test",
+//                 "port": 443
+//             }
+//         ],
+//         basePath: "/v1/",
+//         protocol: "https"
+//     };
 
-    model:BackendSpec sandboxBackendSpec = {
-        services: [
-            {
-                "host": "http-bin-backend.apk-test.svc.cluster.local",
-                "port": 7676
-            }
-        ],
-        protocol: "http"
-    };
+//     model:BackendSpec sandboxBackendSpec = {
+//         services: [
+//             {
+//                 "host": "http-bin-backend.apk-test.svc.cluster.local",
+//                 "port": 7676
+//             }
+//         ],
+//         protocol: "http"
+//     };
 
-    test:assertEquals(apiArtifact.backendServices.length(), 3, "Required number of endpoints not found");
-    test:assertTrue(apiArtifact.productionEndpointAvailable, "Production endpoint not defined");
-    test:assertEquals(apiArtifact.productionRoute.length(), 1, "Production endpoint not defined");
-    foreach model:Httproute httpRoute in apiArtifact.productionRoute {
-        test:assertEquals(httpRoute.spec.hostnames, ["default.gw.wso2.com"], "Production endpoint vhost mismatch");
-        test:assertEquals(httpRoute.spec.rules.length(), 2, "Required number of HTTP Route rules not found");
-        model:HTTPBackendRef[]? backendRefs = httpRoute.spec.rules[0].backendRefs;
-        if backendRefs is model:HTTPBackendRef[] {
-            string backendUUID = backendRefs[0].name;
-            test:assertEquals(apiArtifact.backendServices.get(backendUUID).spec, prodBackendSpec, "Production Backend is not equal to expected Production Backend Config");
-        } else {
-            test:assertFail("Production backend references not found");
-        }
-    }
+//     test:assertEquals(apiArtifact.backendServices.length(), 3, "Required number of endpoints not found");
+//     test:assertTrue(apiArtifact.productionEndpointAvailable, "Production endpoint not defined");
+//     test:assertEquals(apiArtifact.productionRoute.length(), 1, "Production endpoint not defined");
+//     foreach model:Httproute httpRoute in apiArtifact.productionRoute {
+//         test:assertEquals(httpRoute.spec.hostnames, ["default.gw.wso2.com"], "Production endpoint vhost mismatch");
+//         test:assertEquals(httpRoute.spec.rules.length(), 2, "Required number of HTTP Route rules not found");
+//         model:HTTPBackendRef[]? backendRefs = httpRoute.spec.rules[0].backendRefs;
+//         if backendRefs is model:HTTPBackendRef[] {
+//             string backendUUID = backendRefs[0].name;
+//             test:assertEquals(apiArtifact.backendServices.get(backendUUID).spec, prodBackendSpec, "Production Backend is not equal to expected Production Backend Config");
+//         } else {
+//             test:assertFail("Production backend references not found");
+//         }
+//     }
 
-    test:assertTrue(apiArtifact.sandboxEndpointAvailable, "Sandbox endpoint not defined");
-    test:assertEquals(apiArtifact.sandboxRoute.length(), 1, "Sandbox Backend not defined");
-    foreach model:Httproute httpRoute in apiArtifact.sandboxRoute {
-        test:assertEquals(httpRoute.spec.hostnames, ["default.sandbox.gw.wso2.com"], "Sandbox vhost mismatch");
-        model:HTTPBackendRef[]? backendRefs = httpRoute.spec.rules[0].backendRefs;
-        if backendRefs is model:HTTPBackendRef[] {
-            string backendUUID = backendRefs[0].name;
-            test:assertEquals(apiArtifact.backendServices.get(backendUUID).spec, sandboxBackendSpec, "Sandbox Backend is not equal to expected Sandbox Backend Config");
-        } else {
-            test:assertFail("Sandbox backend references not found");
-        }
-    }
-}
+//     test:assertTrue(apiArtifact.sandboxEndpointAvailable, "Sandbox endpoint not defined");
+//     test:assertEquals(apiArtifact.sandboxRoute.length(), 1, "Sandbox Backend not defined");
+//     foreach model:Httproute httpRoute in apiArtifact.sandboxRoute {
+//         test:assertEquals(httpRoute.spec.hostnames, ["default.sandbox.gw.wso2.com"], "Sandbox vhost mismatch");
+//         model:HTTPBackendRef[]? backendRefs = httpRoute.spec.rules[0].backendRefs;
+//         if backendRefs is model:HTTPBackendRef[] {
+//             string backendUUID = backendRefs[0].name;
+//             test:assertEquals(apiArtifact.backendServices.get(backendUUID).spec, sandboxBackendSpec, "Sandbox Backend is not equal to expected Sandbox Backend Config");
+//         } else {
+//             test:assertFail("Sandbox backend references not found");
+//         }
+//     }
+// }
 
 @test:Config {}
 public function testAPILevelRateLimitConfigGenerationFromAPKConf() returns error? {

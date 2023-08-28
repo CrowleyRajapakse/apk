@@ -74,6 +74,7 @@ public class APIClient {
                 uniqueId = <string>apkConf.id;
             }
             model:APIArtifact apiArtifact = {uniqueId: uniqueId, name: apkConf.name, version: apkConf.version, organization: organization.name};
+            EndpointConfigurations[] resourceLevelEndpointConfigList;
             APKOperations[]? operations = apkConf.operations;
             if operations is APKOperations[] {
                 if operations.length() == 0 {
@@ -82,6 +83,8 @@ public class APIClient {
 
                 // Validating rate limit.
                 _ = check self.validateRateLimit(apkConf.apiRateLimit, operations);
+                resourceLevelEndpointConfigList = self.addResourceLevelEndpointConfig(operations);
+
             } else {
                 return e909021();
             }
@@ -89,6 +92,20 @@ public class APIClient {
             EndpointConfigurations? endpointConfigurations = apkConf.endpointConfigurations;
             if endpointConfigurations is EndpointConfigurations {
                 createdEndpoints = check self.createAndAddBackendServics(apiArtifact, apkConf, endpointConfigurations, (), (), organization);
+            }
+            map<model:Endpoint|()>[] createdResourceLevelEndpointsList = [];
+            foreach EndpointConfigurations resourceLevelEndpointConfig in resourceLevelEndpointConfigList {
+                createdResourceLevelEndpointsList.push(check self.createAndAddBackendServics(apiArtifact, apkConf,resourceLevelEndpointConfig,(), (),  organization));
+            }
+
+            foreach map<model:Endpoint|()> createdResourceLevelEndpoints in createdResourceLevelEndpointsList {
+                foreach string key in createdResourceLevelEndpoints.keys() {
+                    // If Resource level endpoint configuration and global endpoint configuration has same key we are skipping
+                    if createdEndpoints.hasKey(key) {
+                        continue;
+                    }
+                    createdEndpoints[key] = createdResourceLevelEndpoints[key];
+                }
             }
             AuthenticationRequest[]? authentication = apkConf.authentication;
             if authentication is AuthenticationRequest[] {
@@ -155,6 +172,18 @@ public class APIClient {
             }
         }
         return ();
+    }
+
+    isolated function addResourceLevelEndpointConfig(APKOperations[] operations) returns EndpointConfigurations[] {
+        EndpointConfigurations[] endpointConfigurationsList = [];
+        foreach APKOperations operation in operations {
+            EndpointConfigurations? endpointConfigurations = operation.endpointConfigurations;
+            if (endpointConfigurations != ()) {
+                // Presence of resource level Endpoint Configuration.
+                endpointConfigurationsList.push(endpointConfigurations);
+            }
+        }
+        return endpointConfigurationsList;
     }
 
     private isolated function createAndAddBackendServics(model:APIArtifact apiArtifact, APKConf apkConf, EndpointConfigurations endpointConfigurations, APKOperations? apiOperation, string? endpointType, commons:Organization organization) returns map<model:Endpoint>|commons:APKError|error {
