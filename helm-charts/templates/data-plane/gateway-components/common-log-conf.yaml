@@ -22,6 +22,11 @@ data:
 
     [commoncontroller.truststore]
       location = "/home/wso2/security/truststore"
+    
+    [commoncontroller.controlplane]
+      enabled = true
+      host = "apim-apk-agent-service.apk.svc.cluster.local"
+      skipSSLVerification = true
 
     [commoncontroller.redis]
     {{- if .Values.wso2.apk.dp.commonController.deployment.redis }}

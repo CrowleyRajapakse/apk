@@ -46,7 +46,18 @@ spec:
       hostname: "*.{{ .Values.wso2.apk.dp.gateway.listener.hostname }}"
       port: 9095
       protocol: "HTTPS"
-      tls:  
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            group: ""
+            name: {{ .Values.wso2.apk.dp.gateway.listener.secretName | default (printf "%s-gw-listener-cert" (include "apk-helm.resource.prefix" .)) }}
+            namespace: {{ .Release.Namespace }}
+    - name: apimgatewaylistener
+      hostname: "{{ .Values.wso2.apk.dp.gateway.listener.hostname }}"
+      port: 9095
+      protocol: "HTTPS"
+      tls:
         mode: Terminate
         certificateRefs:
           - kind: Secret

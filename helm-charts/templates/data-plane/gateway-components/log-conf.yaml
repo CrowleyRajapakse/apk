@@ -99,6 +99,10 @@ data:
       {{end}}
     {{end}}
     {{end}}
+    
+    [enforcer.client]
+      skipSSL = false
+      hostnameVerifier = "AllowAll"
 
     [enforcer.jwtGenerator]
       publicCertificatePath = "/home/wso2/security/truststore/mg.pem"
