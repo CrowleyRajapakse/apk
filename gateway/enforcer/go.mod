@@ -111,9 +111,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.5.0 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
-
-replace github.com/wso2/apk/gateway/enforcer => ../enforcer
-
-replace github.com/wso2/apk/adapter => ../../adapter
-
-replace github.com/wso2/apk/common-go-libs => ../../common-go-libs

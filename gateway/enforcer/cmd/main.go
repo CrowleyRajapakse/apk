@@ -15,6 +15,7 @@ import (
 	"github.com/wso2/apk/gateway/enforcer/internal/transformer"
 	"github.com/wso2/apk/gateway/enforcer/internal/util"
 	"github.com/wso2/apk/gateway/enforcer/internal/xds"
+	"github.com/wso2/apk/gateway/enforcer/pkg/plugins"
 )
 
 func main() {
@@ -53,12 +54,18 @@ func main() {
 			tokenrevocation.NewRevokedTokenFetcher(cfg, revokedJTIStore, nil).Start()
 		}
 	}
+	pluginPath := "/home/wso2/addheader.so"
+
+	policy, err := plugins.LoadPolicyPlugin(pluginPath)
+	if err != nil {
+		cfg.Logger.Sugar().Errorf("Failed to load plugin: %v", err)
+	}
 	// Start the external processing server
 	jwtbackend.JWKKEy, err = jwtbackend.ReadAndConvertToJwks(cfg)
 	if err != nil {
 		cfg.Logger.Sugar().Errorf("Failed to generate JWKS: %v", err)
 	}
-	go extproc.StartExternalProcessingServer(cfg, apiStore, subAppDatastore, jwtTransformer, modelBasedRoundRobinTracker, revokedJTIStore)
+	go extproc.StartExternalProcessingServer(cfg, apiStore, subAppDatastore, jwtTransformer, modelBasedRoundRobinTracker, revokedJTIStore, policy)
 	go jwtbackend.StartJWKSServer(cfg)
 	// Wait for the config to be loaded
 	cfg.Logger.Sugar().Debug("Waiting for the config to be loaded")

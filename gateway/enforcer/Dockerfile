@@ -14,7 +14,34 @@
 # limitations under the License.
 # -----------------------------------------------------------------------
 
-FROM alpine:3.20.3
+# Stage 1: Build plugin and main binary
+FROM --platform=linux/amd64 golang:1.24-alpine as builder
+
+# Install necessary tools for CGO and builds
+RUN apk add --no-cache build-base
+
+WORKDIR /app
+
+# Copy Go source files
+COPY . .
+
+RUN ls -R /app
+
+# Set CGO enabled for plugin builds
+ENV CGO_ENABLED=1
+
+# Build the plugin (.so file)
+RUN CC=aarch64-linux-musl-gcc GOARCH=arm64 GOHOSTARCH=amd64 CGO_ENABLED=1 go build -buildmode=plugin -o resources/policies/addheader.so /app/resources/addheader-plugin/addheader/addheader.go
+
+# Build the main application binary
+RUN CC=aarch64-linux-musl-gcc GOARCH=arm64 GOHOSTARCH=amd64 CGO_ENABLED=1 go build -o ${TARGETARCH}/main /app/cmd/main.go
+
+RUN file resources/policies/addheader.so
+RUN file ${TARGETARCH}/main
+
+# Stage 2: Final minimal Alpine image
+
+FROM alpine:3.20.4
 LABEL maintainer="WSO2 Docker Maintainers <wso2.com>"
 
 RUN apk update && apk upgrade --no-cache \
@@ -60,9 +87,11 @@ RUN \
 WORKDIR ${APK_USER_HOME}
 USER ${APK_USER_ID}
 
-COPY resources/conf/config.toml conf/
-COPY resources/check_health.sh .
-COPY resources/conf/log_config.toml conf/
-COPY ./${TARGETARCH}/main enforcer
+# Copy the compiled binary and plugin from builder stage
+COPY --from=builder /app/resources/conf/config.toml conf/
+COPY --from=builder /app/resources/policies/addheader.so .
+COPY --from=builder /app/resources/check_health.sh .
+COPY --from=builder /app/resources/conf/log_config.toml conf/
+COPY --from=builder /app/${TARGETARCH}/main enforcer
 
 CMD ./enforcer

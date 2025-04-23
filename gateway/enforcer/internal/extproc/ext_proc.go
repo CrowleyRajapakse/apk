@@ -46,16 +46,17 @@ import (
 	"github.com/wso2/apk/gateway/enforcer/internal/requesthandler"
 	"github.com/wso2/apk/gateway/enforcer/internal/transformer"
 	"github.com/wso2/apk/gateway/enforcer/internal/util"
+	"github.com/wso2/apk/gateway/enforcer/pkg/plugins"
 
 	"net"
 	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/status"
-	"google.golang.org/grpc/health"
-    "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/protobuf/encoding/prototext"
 	structpb "google.golang.org/protobuf/types/known/structpb"
 )
@@ -72,6 +73,7 @@ type ExternalProcessingServer struct {
 	modelBasedRoundRobinTracker      *datastore.ModelBasedRoundRobinTracker
 	revokedJTIStore                  *datastore.RevokedJTIStore
 	authenticator                    *authenticator.Authenticator
+	Plugin                           plugins.Policy
 }
 
 const (
@@ -115,7 +117,7 @@ var httpHandler requesthandler.HTTP = requesthandler.HTTP{}
 //     public and private keys, and a logger instance.
 //
 // If there is an error during the creation of the gRPC server, the function will panic.
-func StartExternalProcessingServer(cfg *config.Server, apiStore *datastore.APIStore, subAppDatastore *datastore.SubscriptionApplicationDataStore, jwtTransformer *transformer.JWTTransformer, modelBasedRoundRobinTracker *datastore.ModelBasedRoundRobinTracker, revokedJTIStore *datastore.RevokedJTIStore) {
+func StartExternalProcessingServer(cfg *config.Server, apiStore *datastore.APIStore, subAppDatastore *datastore.SubscriptionApplicationDataStore, jwtTransformer *transformer.JWTTransformer, modelBasedRoundRobinTracker *datastore.ModelBasedRoundRobinTracker, revokedJTIStore *datastore.RevokedJTIStore, plugin plugins.Policy) {
 	kaParams := keepalive.ServerParameters{
 		Time:    time.Duration(cfg.ExternalProcessingKeepAliveTime) * time.Hour, // Ping the client if it is idle for 2 hours
 		Timeout: 20 * time.Second,
@@ -140,7 +142,7 @@ func StartExternalProcessingServer(cfg *config.Server, apiStore *datastore.APISt
 			cfg,
 			jwtTransformer,
 			modelBasedRoundRobinTracker,
-			revokedJTIStore, authenticator.NewAuthenticator(cfg, subAppDatastore, jwtTransformer, revokedJTIStore)})
+			revokedJTIStore, authenticator.NewAuthenticator(cfg, subAppDatastore, jwtTransformer, revokedJTIStore), plugin})
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%s", cfg.ExternalProcessingPort))
 	if err != nil {
 		cfg.Logger.Error(err, fmt.Sprintf("Failed to listen on port: %s", cfg.ExternalProcessingPort))
@@ -210,6 +212,22 @@ func (s *ExternalProcessingServer) Process(srv envoy_service_proc_v3.ExternalPro
 				}
 				break
 			}
+
+			// Handling Policies
+			headerMutations, err := s.Plugin.ApplyRequestHeaders(ctx, req)
+			if err != nil {
+				s.log.Error(err, "failed to extract policy headers")
+			}
+			rhq := &envoy_service_proc_v3.HeadersResponse{
+				Response: &envoy_service_proc_v3.CommonResponse{
+					HeaderMutation: &envoy_service_proc_v3.HeaderMutation{
+						SetHeaders: headerMutations,
+					},
+					// This is necessary if the remote server modified headers that are used to calculate the route.
+					ClearRouteCache: true,
+				},
+			}
+
 			// Handling cors
 			if attributes.RequestMethod == "OPTIONS" {
 				s.log.Sugar().Debug("Handling CORS preflight request")
@@ -224,7 +242,7 @@ func (s *ExternalProcessingServer) Process(srv envoy_service_proc_v3.ExternalPro
 				}
 				break
 			}
-			rhq := &envoy_service_proc_v3.HeadersResponse{
+			rhq = &envoy_service_proc_v3.HeadersResponse{
 				Response: &envoy_service_proc_v3.CommonResponse{
 					HeaderMutation: &envoy_service_proc_v3.HeaderMutation{
 						SetHeaders: []*corev3.HeaderValueOption{
@@ -757,6 +775,20 @@ func (s *ExternalProcessingServer) Process(srv envoy_service_proc_v3.ExternalPro
 			s.log.Sugar().Debug(fmt.Sprintf("response header %+v, ", v.ResponseHeaders))
 			rhq := &envoy_service_proc_v3.HeadersResponse{
 				Response: &envoy_service_proc_v3.CommonResponse{},
+			}
+			// Handling Policies
+			headerMutations, err := s.Plugin.ApplyResponseHeaders(ctx, req)
+			if err != nil {
+				s.log.Error(err, "failed to extract policy headers")
+			}
+			rhq = &envoy_service_proc_v3.HeadersResponse{
+				Response: &envoy_service_proc_v3.CommonResponse{
+					HeaderMutation: &envoy_service_proc_v3.HeaderMutation{
+						SetHeaders: headerMutations,
+					},
+					// This is necessary if the remote server modified headers that are used to calculate the route.
+					ClearRouteCache: true,
+				},
 			}
 			resp = &envoy_service_proc_v3.ProcessingResponse{
 				Response: &envoy_service_proc_v3.ProcessingResponse_ResponseHeaders{
